@@ -1,0 +1,133 @@
+<html>
+
+<head>
+<!-- This form needs to dynamically get the list of 5 Vote Topics from the mother ship -->
+<script src="http://www.5vote.com/wpp/v1/slugs.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+	//var suggestions = new Array();
+	var fivevoteselect;
+	var fivevotecounter;
+	var oldins;
+	var words = new Array();
+
+	document.addEventListener('DOMContentLoaded', function() {		
+		if(fivevoteslugs == undefined){
+			//File didn't load properly
+			console.log("Uh Oh - The slugs were not passed properly");
+			//Fall back on the local cache here...
+		}else{
+			//get the vars
+			fivevoteselect = document.getElementById("fivevote_select_slug");
+			fivevotecounter = document.getElementById("fivevote_results_found_count");
+			fivevoteRefillSelectBox();
+		}	
+		fivevoteInit();	
+	});
+
+	var fivevoteInit = function(){
+		window.setInterval("fivevoteLookAt()", 100);
+	}
+	
+	var fivevoteLookAt = function(){
+		var ins = document.getElementById("fivevote_autocomplete").value;
+		//ins = "The Top 7 "+ins;	//Auto add "The Top 7" to each query 
+		if (oldins == ins) return;	//Position has not changed -- return
+		else if(ins.length == 0) fivevoteRefillSelectBox();
+		else if (ins.length > 0){
+			fivevoteClearOutput();
+			words = fivevoteGetWord(ins);
+			if (words.length > 0){
+				for (var i=0;i < words.length; ++i){
+					fivevoteAddWord(words[i]);
+				}
+				fivevotecounter.innerHTML = words.length;
+			}
+		}
+		oldins = ins;
+	}
+	
+	var fivevoteAddWord = function(fivevoteslug){		//An entire word object is passed
+		fivevoteselect.options[fivevoteselect.options.length] = new Option(fivevoteslug.title, fivevoteslug.slug);
+	}
+	
+	var fivevoteClearOutput = function(){
+		fivevoteselect.options.length = 0;	//Clear all the nodes
+	}
+	
+	var fivevoteRefillSelectBox = function(){
+		fivevoteClearOutput();
+		for (var i = 0; i < fivevoteslugs.length; i++) {		//Refill the select box
+			fivevoteslug = fivevoteslugs[i];
+			fivevoteselect.options[fivevoteselect.options.length] = new Option(fivevoteslug.title, fivevoteslug.slug);
+    	}
+    	fivevotecounter.innerHTML = fivevoteslugs.length;
+	}
+	
+	var fivevoteGetWord = function(search){
+		var words = new Array();
+		for (var i=0;i < fivevoteslugs.length; ++i){
+			var pos = fivevoteslugs[i].title.indexOf(search);
+			if (pos >= 0){
+				words[words.length] = fivevoteslugs[i];	//Sending the entire word object over -- not just the title
+			}
+		}
+		return words;
+	}
+	
+	var fivevote_insert_shortcode = function(){
+		
+		//Get the vars
+		//var fivevoteselect = document.getElementById("fivevote_select_slug");
+		var fivevoteSlugOption = fivevoteselect.options[fivevoteselect.selectedIndex];
+		if(fivevoteSlugOption == undefined){
+			alert("Oops... Please select a 5 Vote topic from the menu.");
+		}
+		var fivevoteslug = fivevoteSlugOption.value;
+		var fivevotetitle = fivevoteselect.options[fivevoteselect.selectedIndex].text;
+		var fivevoteFlagDescription = 'false';
+		var fivevoteFlagLimitList = 'false';
+		var fivevoteFlagHideSharing = document.getElementById("fivevoteCheckboxHideSharing").checked;
+		var fivevoteFlagHideLink = document.getElementById("fivevoteCheckboxHideLink").checked;
+		var fivevoteFlagMaxDisplayCount = document.getElementById("fivevoteMaxDisplayCount").value;
+		var fivevoteshortcode = '[fivevote slug="'+fivevoteslug+'" title="'+fivevotetitle+'" hide_sharing="'+fivevoteFlagHideSharing+'" hide_link="'+fivevoteFlagHideLink+'" max_display_count="'+fivevoteFlagMaxDisplayCount+'"]';
+		
+		//Insert content and close the window
+		parent.tinyMCE.execCommand('mceInsertContent', false, fivevoteshortcode);
+		parent.tinyMCE.activeEditor.focus();
+		parent.tinyMCE.activeEditor.windowManager.close(this);
+	};
+
+	
+	
+</script>
+
+</head>
+<body style="text-align:center;">
+
+<div style="display:inline-block; width:500px;">
+	<form>
+		<h2 style="vertical-align:middle;"><img src="http://www.5vote.com/images/icons32/emotion_tongue.png" style="vertical-align:middle;" /> Select your desired 5 Vote Topic</h2>
+		<div style="display:table; padding:10px;">
+			<div style="display:table-cell; width:70%; text-align:left;">Filter Results: <input id="fivevote_autocomplete" type="text" name="text" autocomplete="on"></div>
+			<div style="display:table-cell; width:auto;">&nbsp;</div>
+			<div style="display:table-cell; width:30%; text-align:left; font-size:small;">Results found: <div style="display:inline-block;" id="fivevote_results_found_count">&nbsp;</div></div>
+		</div>
+		<select name="fivevote_select_slug" id="fivevote_select_slug" size="10" style="width:100%; height:150px;">
+			<!--<option value="default-slug">-- Choose a 5 Vote Topic --</option>-->
+		</select>
+		
+		<div style="text-align:left; font-size:small; margin-top:10px;">
+			<p>Additional options to customize functionality.</p>
+			<div><input type="checkbox" id="fivevoteCheckboxHideSharing" /> Hide Social Sharing Features</div>
+			<div><input type="checkbox" id="fivevoteCheckboxHideLink" /> Hide Direct Link Sharing Feature</div>
+			<div><input type="checkbox" id="fivevoteCheckboxHideLink" /> Max Photos to Display <input type="text" id="fivevoteMaxDisplayCount" size="5" /><span style="font-style:italic; font-size:smaller;">(0 for unlimited)</span></div>
+		</div>
+		<p><input type="button" style="padding:10px" onclick="javascript:fivevote_insert_shortcode();" value="Insert" /></p>
+	</form>
+</div>
+
+</body>
+
+</html>
